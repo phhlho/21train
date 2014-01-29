@@ -21,63 +21,6 @@ exports.getApi = function(req, res) {
 };
 
 /**
- * GET /api/foursquare
- * Foursquare API example.
- */
-
-exports.getFoursquare = function(req, res, next) {
-  var token = _.findWhere(req.user.tokens, { kind: 'foursquare' });
-  async.parallel({
-    trendingVenues: function(callback) {
-      foursquare.Venues.getTrending('40.7222756', '-74.0022724', { limit: 50 }, token.accessToken, function(err, results) {
-        callback(err, results);
-      });
-    },
-    venueDetail: function(callback) {
-      foursquare.Venues.getVenue('49da74aef964a5208b5e1fe3', token.accessToken, function(err, results) {
-        callback(err, results);
-      });
-    },
-    userCheckins: function(callback) {
-      foursquare.Users.getCheckins('self', null, token.accessToken, function(err, results) {
-        callback(err, results);
-      });
-    }
-  },
-  function(err, results) {
-    if (err) return next(err);
-    res.render('api/foursquare', {
-      title: 'Foursquare API',
-      trendingVenues: results.trendingVenues,
-      venueDetail: results.venueDetail,
-      userCheckins: results.userCheckins
-    });
-  });
-};
-
-/**
- * GET /api/tumblr
- * Tumblr API example.
- */
-
-exports.getTumblr = function(req, res) {
-  var token = _.findWhere(req.user.tokens, { kind: 'tumblr' });
-  var client = tumblr.createClient({
-    consumer_key: secrets.tumblr.consumerKey,
-    consumer_secret: secrets.tumblr.consumerSecret,
-    token: token.accessToken,
-    token_secret: token.tokenSecret
-  });
-  client.posts('goddess-of-imaginary-light.tumblr.com', { type: 'photo' }, function(err, data) {
-    res.render('api/tumblr', {
-      title: 'Tumblr API',
-      blog: data.blog,
-      photoset: data.posts[0].photos
-    });
-  });
-};
-
-/**
  * GET /api/facebook
  * Facebook API example.
  */
@@ -128,23 +71,6 @@ exports.getScraping = function(req, res, next) {
 };
 
 /**
- * GET /api/github
- * GitHub API Example.
- */
-exports.getGithub = function(req, res) {
-  var token = _.findWhere(req.user.tokens, { kind: 'github' });
-  var github = new Github({ token: token.accessToken });
-  var repo = github.getRepo('sahat', 'requirejs-library');
-  repo.show(function(err, repo) {
-    res.render('api/github', {
-      title: 'GitHub API',
-      repo: repo
-    });
-  });
-
-};
-
-/**
  * GET /api/aviary
  * Aviary image processing example.
  */
@@ -152,81 +78,6 @@ exports.getGithub = function(req, res) {
 exports.getAviary = function(req, res) {
   res.render('api/aviary', {
     title: 'Aviary API'
-  });
-};
-
-/**
- * GET /api/nyt
- * New York Times API example.
- */
-
-exports.getNewYorkTimes = function(req, res, next) {
-  var query = querystring.stringify({ 'api-key': secrets.nyt.key, 'list-name': 'young-adult' });
-  var url = 'http://api.nytimes.com/svc/books/v2/lists?' + query;
-  request.get(url, function(error, request, body) {
-    if (request.statusCode === 403) return next(Error('Missing or Invalid New York Times API Key'));
-    var bestsellers = JSON.parse(body);
-    res.render('api/nyt', {
-      title: 'New York Times API',
-      books: bestsellers.results
-    });
-  });
-};
-
-/**
- * GET /api/lastfm
- * Last.fm API example.
- */
-
-exports.getLastfm = function(req, res, next) {
-  var lastfm = new LastFmNode(secrets.lastfm);
-  async.parallel({
-    artistInfo: function(done) {
-      lastfm.request("artist.getInfo", {
-        artist: 'Epica',
-        handlers: {
-          success: function(data) {
-            done(null, data);
-          },
-          error: function(err) {
-            done(err);
-          }
-        }
-      });
-    },
-    artistTopAlbums: function(done) {
-      lastfm.request("artist.getTopAlbums", {
-        artist: 'Epica',
-        handlers: {
-          success: function(data) {
-            var albums = [];
-            _.each(data.topalbums.album, function(album) {
-              albums.push(album.image.slice(-1)[0]['#text']);
-            });
-            done(null, albums.slice(0,4));
-          },
-          error: function(err) {
-            done(err);
-          }
-        }
-      });
-    }
-  },
-  function(err, results) {
-    if (err) return next(err.message);
-    var artist = {
-      name: results.artistInfo.artist.name,
-      image: results.artistInfo.artist.image.slice(-1)[0]['#text'],
-      tags: results.artistInfo.artist.tags.tag,
-      bio: results.artistInfo.artist.bio.summary,
-      stats: results.artistInfo.artist.stats,
-      similar: results.artistInfo.artist.similar.artist,
-      topAlbums: results.artistTopAlbums
-    };
-    res.render('api/lastfm', {
-      title: 'Last.fm API',
-      artist: artist
-    });
   });
 };
 

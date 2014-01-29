@@ -10,7 +10,6 @@ var userSchema = new mongoose.Schema({
   facebook: { type: String, unique: true, sparse: true },
   twitter: { type: String, unique: true, sparse: true },
   google: { type: String, unique: true, sparse: true },
-  github: { type: String, unique: true, sparse: true },
 
   profile: {
     name: { type: String, default: '' },
